@@ -17,6 +17,8 @@ inputs:
 outputs:
   rating:
     description: 'The security rating of your HTTP response headers'
+  supportedTLS:
+    description: 'List of supported TLS protocols'
 runs:
   using: 'docker'
   image: 'Dockerfile'
