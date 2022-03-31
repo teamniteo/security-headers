@@ -8,6 +8,13 @@ if [ $# == 0 ]; then
     exit 1
 fi
 
+function scan() {
+    curl -svlo /dev/null --show-error --fail "https://$1" --tlsv$2 --tls-max $2
+    retval=$?
+    if [ $retval -eq 0 ]; then
+        supported=$(echo "$supportedTLS tls$2" | xargs)
+    fi
+}
 
 GRADE=${2:-'B'}
 FOLLOW_REDIRECTS=${3-'1'}
@@ -27,38 +34,21 @@ declare -A grades=(
 )
 
 RATING=$(curl -s -L "https://securityheaders.com/?hide=on&followRedirects=$FOLLOW_REDIRECTS&q=$1" -I | sed -En 's/x-grade: (.*)/\1/p' | tr -d '\r')
-
-echo "::set-output name=rating::$RATING"
-
-if [ $RATING = "R" ]; then
-    echo "$1 returned a redirect, enable the followRedirects option to scan this URL."
-    exit 1
-fi
-
-if [ ${grades[$RATING]} -ge ${grades[$GRADE]} ]; then
-	exit 0
-else
-	exit 1
-fi
-
 supportedTLS=""
-
-function scan() {
-    curl -svlo /dev/null --show-error --fail "https://$1" --tlsv$2 --tls-max $2
-    retval=$?
-    if [ $retval -eq 0 ]; then
-        supported=$(echo "$supportedTLS tls$2" | xargs)
-    fi
-}
 
 scan "$1" "1.0"
 scan "$1" "1.1"
 scan "$1" "1.2"
 scan "$1" "1.3"
 
-echo "::set-output name=supportedTLS::$supportedTLS"
+if [ "$supportedTLS" != "tls1.2 tls1.3" ]; then
+	RATING="F"
+fi
 
-if [ "$supportedTLS" == "tls1.2 tls1.3" ]; then
+echo "::set-output name=supportedTLS::$supportedTLS"
+echo "::set-output name=rating::$RATING"
+
+if [ ${grades[$RATING]} -ge ${grades[$GRADE]} ]; then
 	exit 0
 else
 	exit 1
