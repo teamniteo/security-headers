@@ -40,3 +40,26 @@ if [ ${grades[$RATING]} -ge ${grades[$GRADE]} ]; then
 else
 	exit 1
 fi
+
+supportedTLS=""
+
+function scan() {
+    curl -svlo /dev/null --show-error --fail "https://$1" --tlsv$2 --tls-max $2
+    retval=$?
+    if [ $retval -eq 0 ]; then
+        supported=$(echo "$supportedTLS tls$2" | xargs)
+    fi
+}
+
+scan "$1" "1.0"
+scan "$1" "1.1"
+scan "$1" "1.2"
+scan "$1" "1.3"
+
+echo "::set-output name=supportedTLS::$supportedTLS"
+
+if [ "$supportedTLS" == "tls1.2 tls1.3" ]; then
+	exit 0
+else
+	exit 1
+fi
