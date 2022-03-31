@@ -8,20 +8,13 @@ if [ $# == 0 ]; then
     exit 1
 fi
 
-function scan() {
-    curl -svlo /dev/null --show-error --fail "$1" --tlsv$2 --tls-max $2
-    retval=$?
-    if [ $retval -eq 0 ]; then
-        supported=$(echo "$supportedTLS tls$2" | xargs)
-    fi
-}
-
 GRADE=${2:-'B'}
 FOLLOW_REDIRECTS=${3-'1'}
 FOLLOW_REDIRECTS=${FOLLOW_REDIRECTS/true/1}
 FOLLOW_REDIRECTS=${FOLLOW_REDIRECTS/on/1}
 FOLLOW_REDIRECTS=${FOLLOW_REDIRECTS/false/0}
 FOLLOW_REDIRECTS=${FOLLOW_REDIRECTS/off/0}
+supportedTLS=""
 
 declare -A grades=(
 	['A+']=7
@@ -33,9 +26,15 @@ declare -A grades=(
 	['F']=1
 )
 
-RATING=$(curl -s -L "https://securityheaders.com/?hide=on&followRedirects=$FOLLOW_REDIRECTS&q=$1" -I | sed -En 's/x-grade: (.*)/\1/p' | tr -d '\r')
-supportedTLS=""
+function scan() {
+    curl -slvo /dev/null --show-error --fail "$1" --tlsv$2 --tls-max $2
+    retval=$?
+    if [ $retval -eq 0 ]; then
+        supportedTLS=$(echo "$supportedTLS tls$2" | xargs)
+    fi
+}
 
+RATING=$(curl -s -L "https://securityheaders.com/?hide=on&followRedirects=$FOLLOW_REDIRECTS&q=$1" -I | sed -En 's/x-grade: (.*)/\1/p' | tr -d '\r')
 scan "$1" "1.0"
 scan "$1" "1.1"
 scan "$1" "1.2"
