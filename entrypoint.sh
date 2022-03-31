@@ -9,7 +9,7 @@ if [ $# == 0 ]; then
 fi
 
 function scan() {
-    curl -svlo /dev/null --show-error --fail "https://$1" --tlsv$2 --tls-max $2
+    curl -svlo /dev/null --show-error --fail "$1" --tlsv$2 --tls-max $2
     retval=$?
     if [ $retval -eq 0 ]; then
         supported=$(echo "$supportedTLS tls$2" | xargs)
