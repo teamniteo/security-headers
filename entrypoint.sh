@@ -4,16 +4,10 @@ if [ $# == 0 ]; then
     echo "Usage: url [grade] [followRedirects]"
     echo "* url: URL to analyse."
     echo "* grade: The desired security grade of your HTTP response headers. Possible grades: A+, A, B, C, D, E, F. Defaults to B."
-    echo "* followRedirects: Follow redirects. Defaults to on, set to off or false to disable."
     exit 1
 fi
 
 GRADE=${2:-'B'}
-FOLLOW_REDIRECTS=${3-'1'}
-FOLLOW_REDIRECTS=${FOLLOW_REDIRECTS/true/1}
-FOLLOW_REDIRECTS=${FOLLOW_REDIRECTS/on/1}
-FOLLOW_REDIRECTS=${FOLLOW_REDIRECTS/false/0}
-FOLLOW_REDIRECTS=${FOLLOW_REDIRECTS/off/0}
 supportedTLS=""
 
 declare -A grades=(
@@ -24,6 +18,7 @@ declare -A grades=(
 	['D']=3
 	['E']=2
 	['F']=1
+	['R']=0
 )
 
 function scan() {
@@ -34,7 +29,7 @@ function scan() {
     fi
 }
 
-RATING=$(curl -s -L "https://securityheaders.com/?hide=on&followRedirects=$FOLLOW_REDIRECTS&q=$1" -I | sed -En 's/x-grade: (.*)/\1/p' | tr -d '\r')
+RATING=$(curl -s -L "https://securityheaders.com/?hide=on&followRedirects=on&q=https%3A%2F%2F$1" -I | sed -En 's/x-grade: (.*)/\1/p' | tr -d '\r')
 scan "$1" "1.0"
 scan "$1" "1.1"
 scan "$1" "1.2"
